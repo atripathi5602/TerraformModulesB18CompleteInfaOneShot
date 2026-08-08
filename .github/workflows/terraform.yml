@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "feature/**"
+      - main
 
   pull_request:
     branches:
@@ -12,13 +13,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
+  # =========================
+  # TERRAFORM PLAN
+  # =========================
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/'))
+      || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout Code
@@ -27,9 +34,9 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: "32bbe112-9f93-4dc7-a2ba-8c03c7457a55"
-          tenant-id: "385e8e30-4e09-472e-9311-9c945c28dafc"
-          subscription-id: "c9f80e6f-8188-4efe-a080-4474dc1aaea3"
+          client-id: "9eac3105-2ec2-4f37-8b90-3d1d851fce11"
+          client-secret: "W4V8Q~NmAomNOfMjBrTUT.rYDEUB8YgKRzAgduC"
+          tenant-id: "0f7010fd-209e-4344-8457-043ffb37143b"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -50,14 +57,14 @@ jobs:
         working-directory: ./terraformCode
         run: terraform plan
 
+  # =========================
+  # TERRAFORM APPLY
+  # =========================
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
 
-    # Apply only after PR is merged into main
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-
-    needs: terraform-plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     environment:
       name: production
@@ -65,15 +72,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: "32bbe112-9f93-4dc7-a2ba-8c03c7457a55"
-          tenant-id: "385e8e30-4e09-472e-9311-9c945c28dafc"
-          subscription-id: "c9f80e6f-8188-4efe-a080-4474dc1aaea3"
+          client-id: "9eac3105-2ec2-4f37-8b90-3d1d851fce11"
+          client-secret: "W4V8Q~NmAomNOfMjBrTUT.rYDEUB8YgKRzAgduC"
+          tenant-id: "0f7010fd-209e-4344-8457-043ffb37143b"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
